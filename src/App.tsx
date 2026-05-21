@@ -1056,21 +1056,21 @@ function IssueDetail({
         </div>
       )}
 
-      {canWork && (
+      {canWork && issue.status !== 'Done' && (
         <div className="action-row">
-          <button
-            type="button"
-            className="secondary-action"
-            onClick={() => onStatusChange(issue.id, 'In Progress')}
-            disabled={issue.status === 'Done'}
-          >
-            <Clock3 size={19} /> Mulai
-          </button>
+          {issue.status !== 'In Progress' && (
+            <button
+              type="button"
+              className="secondary-action"
+              onClick={() => onStatusChange(issue.id, 'In Progress')}
+            >
+              <Clock3 size={19} /> Mulai
+            </button>
+          )}
           <button
             type="button"
             className="primary-action gold-action"
             onClick={() => onStatusChange(issue.id, 'Done')}
-            disabled={issue.status === 'Done'}
           >
             <CheckCircle2 size={19} /> Selesai
           </button>
