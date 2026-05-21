@@ -69,7 +69,7 @@ type Issue = {
 }
 
 const people: Person[] = [
-  { id: 'budi', name: 'Budi Santoso', role: 'pelapor', unit: 'Fakultas Teknik' },
+  { id: 'budi', name: 'Budi Santoso', role: 'pelapor', unit: 'Informatika' },
   { id: 'raka', name: 'Dr. Raka Wibawa', role: 'pimpinan', unit: 'Pimpinan Fakultas' },
   { id: 'andi', name: 'Andi Prakoso', role: 'pekerja', unit: 'Tim Sarpras' },
   { id: 'sinta', name: 'Sinta Maharani', role: 'pekerja', unit: 'Tim IT' },
@@ -277,6 +277,7 @@ function CategoryIcon({ category }: { category: Category }) {
 function App() {
   const [activeView, setActiveView] = useState<View>('home')
   const [role, setRole] = useState<Role>('pelapor')
+  const [activeWorkerId, setActiveWorkerId] = useState(workerPeople[0].id)
   const [issues, setIssues] = useState<Issue[]>(initialIssues)
   const [selectedIssueId, setSelectedIssueId] = useState(initialIssues[0].id)
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'All'>('All')
@@ -292,7 +293,8 @@ function App() {
     assigneeId: workerPeople[0].id,
   })
 
-  const activePerson = getPerson(roleMeta[role].personId) ?? people[0]
+  const activePerson =
+    getPerson(role === 'pekerja' ? activeWorkerId : roleMeta[role].personId) ?? people[0]
   const selectedIssue = issues.find((issue) => issue.id === selectedIssueId) ?? issues[0]
 
   const visibleIssues = useMemo(() => {
@@ -323,7 +325,20 @@ function App() {
     setRole(nextRole)
     setStatusFilter('All')
     setSearchTerm('')
+    if (nextRole === 'pekerja') {
+      const firstWorkerIssue = issues.find((issue) => issue.assigneeId === activeWorkerId)
+      if (firstWorkerIssue) setSelectedIssueId(firstWorkerIssue.id)
+    }
     setActiveView(nextRole === 'pimpinan' ? 'issues' : nextRole === 'pekerja' ? 'my-work' : 'home')
+  }
+
+  const changeWorker = (workerId: string) => {
+    setActiveWorkerId(workerId)
+    const firstWorkerIssue = issues.find((issue) => issue.assigneeId === workerId)
+    if (firstWorkerIssue) setSelectedIssueId(firstWorkerIssue.id)
+    setActiveView('my-work')
+    setStatusFilter('All')
+    setSearchTerm('')
   }
 
   const selectIssue = (id: string) => {
@@ -445,7 +460,13 @@ function App() {
       <Sidebar activeView={activeView} setActiveView={setActiveView} role={role} />
 
       <main className="main-panel">
-        <Topbar role={role} activePerson={activePerson} onRoleChange={changeRole} />
+        <Topbar
+          role={role}
+          activePerson={activePerson}
+          activeWorkerId={activeWorkerId}
+          onRoleChange={changeRole}
+          onWorkerChange={changeWorker}
+        />
 
         <section className="mobile-hero">
           <div>
@@ -496,8 +517,10 @@ function App() {
             <ProfilePanel
               role={role}
               activePerson={activePerson}
+              activeWorkerId={activeWorkerId}
               issues={issues}
               onRoleChange={changeRole}
+              onWorkerChange={changeWorker}
             />
           )}
         </div>
@@ -533,7 +556,7 @@ function Sidebar({
       <div className="brand-lockup vertical">
         <img src={undipCrest} alt="Logo UNDIP" />
         <div>
-          <strong>UNDIP ReportFlow</strong>
+          <strong>FSM Kerja</strong>
           <span>Issue & Penugasan</span>
         </div>
       </div>
@@ -570,11 +593,15 @@ function Sidebar({
 function Topbar({
   role,
   activePerson,
+  activeWorkerId,
   onRoleChange,
+  onWorkerChange,
 }: {
   role: Role
   activePerson: Person
+  activeWorkerId: string
   onRoleChange: (role: Role) => void
+  onWorkerChange: (workerId: string) => void
 }) {
   return (
     <header className="topbar">
@@ -582,7 +609,7 @@ function Topbar({
         <Menu size={26} />
         <img src={undipCrest} alt="Logo UNDIP" />
         <div>
-          <strong>UNDIP ReportFlow</strong>
+          <strong>FSM Kerja</strong>
           <span>Issue & Penugasan</span>
         </div>
       </div>
@@ -601,6 +628,18 @@ function Topbar({
             ))}
           </select>
         </label>
+        {role === 'pekerja' && (
+          <label className="worker-select">
+            <span>Impersonate</span>
+            <select value={activeWorkerId} onChange={(event) => onWorkerChange(event.target.value)}>
+              {workerPeople.map((worker) => (
+                <option key={worker.id} value={worker.id}>
+                  {worker.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <span className="unit-chip">{activePerson.unit}</span>
       </div>
     </header>
@@ -1090,13 +1129,17 @@ function InfoPill({
 function ProfilePanel({
   role,
   activePerson,
+  activeWorkerId,
   issues,
   onRoleChange,
+  onWorkerChange,
 }: {
   role: Role
   activePerson: Person
+  activeWorkerId: string
   issues: Issue[]
   onRoleChange: (role: Role) => void
+  onWorkerChange: (workerId: string) => void
 }) {
   return (
     <div className="screen-stack narrow">
@@ -1121,6 +1164,20 @@ function ProfilePanel({
           ))}
         </select>
       </section>
+      {role === 'pekerja' && (
+        <section className="panel form-panel">
+          <label>
+            Impersonate pekerja
+            <select value={activeWorkerId} onChange={(event) => onWorkerChange(event.target.value)}>
+              {workerPeople.map((worker) => (
+                <option key={worker.id} value={worker.id}>
+                  {worker.name} - {worker.unit}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+      )}
       <div className="metric-row">
         <Metric label="All issues" value={issues.length} tone="blue" />
         <Metric label="Active" value={issues.filter((issue) => issue.status !== 'Done').length} tone="gold" />

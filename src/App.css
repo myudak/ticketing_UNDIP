@@ -220,6 +220,19 @@ button {
   gap: 12px;
 }
 
+.worker-select {
+  min-width: 190px;
+  display: grid;
+  gap: 4px;
+}
+
+.worker-select span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .role-select img {
   width: 54px;
   height: 54px;
@@ -235,6 +248,12 @@ button {
   background: transparent;
   font-weight: 750;
   outline: 0;
+}
+
+.worker-select select {
+  padding: 8px 10px;
+  background: #f2f6fc;
+  font-weight: 750;
 }
 
 .unit-chip,
